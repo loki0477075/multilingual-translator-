@@ -1,0 +1,751 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Language Translator with Voice Assistant</title>
+    <style>
+        /* Reset and Global Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            width: 100%;
+            max-width: 800px; /* Increased from 500px to 800px */
+            height: 700px; /* Increased height for more space */
+            background-color: #ffffff;
+            border-radius: 15px; /* More pronounced rounded effect */
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2); /* Enhanced box-shadow */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .chat-container:hover {
+            transform: translateY(-5px); /* Slightly more upward movement */
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.25); /* Deeper shadow on hover */
+        }
+
+        /* Chat Box */
+        .chat-box {
+            flex: 1;
+            padding: 30px; /* Increased padding for more spacious messages */
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            font-size: 1.1em; /* Larger font size for better readability */
+        }
+
+        /* Chat Messages */
+        .chat-message {
+            margin-bottom: 20px; /* Increased spacing between messages */
+            display: flex;
+            flex-direction: column;
+            max-width: 70%; /* Adjusted max-width for larger containers */
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            color: #333;
+            padding: 15px 20px; /* Increased padding */
+            border-radius: 20px 20px 0 20px; /* More pronounced rounded corners */
+            position: relative;
+            font-size: 1.1em; /* Larger font size */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: #e2e2e2;
+            color: #333;
+            padding: 15px 20px; /* Increased padding */
+            border-radius: 20px 20px 20px 0; /* More pronounced rounded corners */
+            position: relative;
+            font-size: 1.1em; /* Larger font size */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Input Container */
+        .input-container {
+            padding: 20px 25px; /* Increased padding */
+            background-color: #ffffff;
+            border-top: 2px solid #ccc; /* Thicker border for separation */
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; /* Allows items to wrap on smaller screens */
+            gap: 10px; /* Adds space between elements */
+        }
+
+        /* Language Selectors */
+        .language-selectors {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .language-selectors select {
+            padding: 10px 15px;
+            border: 1.5px solid #ccc;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s ease;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            min-width: 120px;
+        }
+
+        .language-selectors select:focus {
+            border-color: #4CAF50;
+        }
+
+        /* Input Field */
+        input[type="text"] {
+            flex: 2;
+            padding: 15px 20px; /* Increased padding for larger input area */
+            border: 1.5px solid #ccc; /* Thicker border */
+            border-radius: 30px; /* More pronounced rounded corners */
+            font-size: 1.1em; /* Larger font size */
+            outline: none;
+            transition: border-color 0.3s ease;
+            width: 100%;
+        }
+
+        input[type="text"]:focus {
+            border-color: #4CAF50;
+        }
+
+        /* Send Button */
+        .send-button {
+            flex: 1;
+            padding: 15px 25px; /* Increased padding for a larger button */
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 30px; /* More pronounced rounded corners */
+            cursor: pointer;
+            font-size: 1.1em; /* Larger font size */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            min-width: 100px;
+        }
+
+        .send-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        /* Voice Buttons */
+        .voice-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .voice-button {
+            background-color: #007BFF;
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-button:hover {
+            background-color: #0056b3;
+            transform: scale(1.1);
+        }
+
+        /* Scrollbar Styling */
+        .chat-box::-webkit-scrollbar {
+            width: 10px; /* Increased scrollbar width */
+        }
+
+        .chat-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .chat-container {
+                max-width: 90%;
+                height: 600px; /* Adjusted height for medium screens */
+            }
+
+            .chat-box {
+                padding: 25px;
+                font-size: 1em;
+            }
+
+            .chat-message {
+                max-width: 80%;
+                margin-bottom: 18px;
+            }
+
+            .user-message,
+            .bot-message {
+                padding: 12px 18px;
+                font-size: 1em;
+                border-radius: 18px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            .input-container {
+                padding: 18px 20px;
+            }
+
+            .language-selectors select {
+                padding: 8px 12px;
+                font-size: 0.95em;
+                border-radius: 20px;
+                min-width: 100px;
+            }
+
+            input[type="text"] {
+                padding: 12px 18px;
+                font-size: 1em;
+                border-radius: 25px;
+            }
+
+            .send-button {
+                margin-left: 12px;
+                padding: 12px 20px;
+                font-size: 1em;
+                border-radius: 25px;
+                min-width: 90px;
+            }
+
+            .voice-button {
+                padding: 10px;
+                font-size: 0.9em;
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .chat-container {
+                max-width: 100%;
+                height: 500px; /* Further adjusted height for mobile devices */
+            }
+
+            .chat-box {
+                padding: 20px;
+                font-size: 0.95em;
+            }
+
+            .chat-message {
+                max-width: 90%;
+                margin-bottom: 15px;
+            }
+
+            .user-message,
+            .bot-message {
+                padding: 10px 15px;
+                font-size: 0.95em;
+                border-radius: 15px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+
+            .input-container {
+                padding: 15px 18px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .language-selectors {
+                flex-direction: column;
+                gap: 5px;
+                width: 100%;
+            }
+
+            .language-selectors select {
+                width: 100%;
+            }
+
+            input[type="text"] {
+                padding: 10px 15px;
+                font-size: 0.95em;
+                border-radius: 20px;
+                width: 100%;
+            }
+
+            .send-button {
+                margin-left: 0;
+                margin-top: 10px;
+                padding: 10px 18px;
+                font-size: 0.95em;
+                border-radius: 20px;
+                width: 100%;
+            }
+
+            .voice-buttons {
+                margin-left: 0;
+                margin-top: 10px;
+                justify-content: center;
+            }
+
+            .voice-button {
+                padding: 8px;
+                font-size: 0.8em;
+                width: 35px;
+                height: 35px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div id="chat-box" class="chat-box">
+        <!-- Chat messages will appear here -->
+    </div>
+    <div class="input-container">
+        <!-- Language Selectors -->
+        <div class="language-selectors">
+            <select id="sourceLang" title="Source Language">
+                <option value="auto">Auto-Detect</option>
+                <option value="hi">Hindi</option>
+                <option value="bn">Bengali</option>
+                <option value="te">Telugu</option>
+                <option value="mr">Marathi</option>
+                <option value="ta">Tamil</option>
+                <option value="ur">Urdu</option>
+                <option value="gu">Gujarati</option>
+                <option value="ml">Malayalam</option>
+                <option value="kn">Kannada</option>
+                <option value="or">Oriya</option>
+                <option value="pa">Punjabi</option>
+                <option value="as">Assamese</option>
+                <option value="sd">Sindhi</option>
+                <option value="sa">Sanskrit</option>
+                <option value="kok">Konkani</option>
+                <option value="mni">Manipuri</option>
+                <option value="ne">Nepali</option>
+                <option value="mai">Maithili</option>
+                <option value="af">Afrikaans</option>
+                <option value="sq">Albanian</option>
+                <option value="am">Amharic</option>
+                <option value="ar">Arabic</option>
+                <option value="hy">Armenian</option>
+                <option value="az">Azerbaijani</option>
+                <option value="eu">Basque</option>
+                <option value="be">Belarusian</option>
+                <option value="bn">Bengali</option>
+                <option value="bs">Bosnian</option>
+                <option value="bg">Bulgarian</option>
+                <option value="ca">Catalan</option>
+                <option value="ceb">Cebuano</option>
+                <option value="ny">Chichewa</option>
+                <option value="zh-CN">Chinese (Simplified)</option>
+                <option value="zh-TW">Chinese (Traditional)</option>
+                <option value="co">Corsican</option>
+                <option value="hr">Croatian</option>
+                <option value="cs">Czech</option>
+                <option value="da">Danish</option>
+                <option value="nl">Dutch</option>
+                <option value="en">English</option>
+                <option value="eo">Esperanto</option>
+                <option value="et">Estonian</option>
+                <option value="tl">Filipino</option>
+                <option value="fi">Finnish</option>
+                <option value="fr">French</option>
+                <option value="fy">Frisian</option>
+                <option value="gl">Galician</option>
+                <option value="ka">Georgian</option>
+                <option value="de">German</option>
+                <option value="el">Greek</option>
+                <option value="gu">Gujarati</option>
+                <option value="ht">Haitian Creole</option>
+                <option value="ha">Hausa</option>
+                <option value="haw">Hawaiian</option>
+                <option value="he">Hebrew</option>
+                <option value="hi">Hindi</option>
+                <option value="hmn">Hmong</option>
+                <option value="hu">Hungarian</option>
+                <option value="is">Icelandic</option>
+                <option value="ig">Igbo</option>
+                <option value="id">Indonesian</option>
+                <option value="ga">Irish</option>
+                <option value="it">Italian</option>
+                <option value="ja">Japanese</option>
+                <option value="jw">Javanese</option>
+                <option value="kn">Kannada</option>
+                <option value="kk">Kazakh</option>
+                <option value="km">Khmer</option>
+                <option value="rw">Kinyarwanda</option>
+                <option value="ko">Korean</option>
+                <option value="ku">Kurdish (Kurmanji)</option>
+                <option value="ky">Kyrgyz</option>
+                <option value="lo">Lao</option>
+                <option value="la">Latin</option>
+                <option value="lv">Latvian</option>
+                <option value="lt">Lithuanian</option>
+                <option value="lb">Luxembourgish</option>
+                <option value="mk">Macedonian</option>
+                <option value="mg">Malagasy</option>
+                <option value="ms">Malay</option>
+                <option value="ml">Malayalam</option>
+                <option value="mt">Maltese</option>
+                <option value="mi">Maori</option>
+                <option value="mr">Marathi</option>
+                <option value="mn">Mongolian</option>
+                <option value="my">Myanmar (Burmese)</option>
+                <option value="ne">Nepali</option>
+                <option value="no">Norwegian</option>
+                <option value="or">Odia</option>
+                <option value="ps">Pashto</option>
+                <option value="fa">Persian</option>
+                <option value="pl">Polish</option>
+                <option value="pt">Portuguese</option>
+                <option value="pa">Punjabi</option>
+                <option value="ro">Romanian</option>
+                <option value="ru">Russian</option>
+                <option value="sm">Samoan</option>
+                <option value="gd">Scots Gaelic</option>
+                <option value="sr">Serbian</option>
+                <option value="st">Sesotho</option>
+                <option value="sn">Shona</option>
+                <option value="sd">Sindhi</option>
+                <option value="si">Sinhala</option>
+                <option value="sk">Slovak</option>
+                <option value="sl">Slovenian</option>
+                <option value="so">Somali</option>
+                <option value="es">Spanish</option>
+                <option value="su">Sundanese</option>
+                <option value="sw">Swahili</option>
+                <option value="sv">Swedish</option>
+                <option value="tg">Tajik</option>
+                <option value="ta">Tamil</option>
+                <option value="tt">Tatar</option>
+                <option value="te">Telugu</option>
+                <option value="th">Thai</option>
+                <option value="tr">Turkish</option>
+                <option value="tk">Turkmen</option>
+                <option value="uk">Ukrainian</option>
+                <option value="ur">Urdu</option>
+                <option value="ug">Uyghur</option>
+                <option value="uz">Uzbek</option>
+                <option value="vi">Vietnamese</option>
+                <option value="cy">Welsh</option>
+                <option value="xh">Xhosa</option>
+                <option value="yi">Yiddish</option>
+                <option value="yo">Yoruba</option>
+                <option value="zu">Zulu</option>
+
+                <!-- Add more languages as needed -->
+            </select>
+            <select id="targetLang" title="Target Language">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="bn">Bengali</option>
+                <option value="te">Telugu</option>
+                <option value="mr">Marathi</option>
+                <option value="ta">Tamil</option>
+                <option value="ur">Urdu</option>
+                <option value="gu">Gujarati</option>
+                <option value="ml">Malayalam</option>
+                <option value="kn">Kannada</option>
+                <option value="or">Oriya</option>
+                <option value="pa">Punjabi</option>
+                <option value="as">Assamese</option>
+                <option value="sd">Sindhi</option>
+                <option value="sa">Sanskrit</option>
+                <option value="kok">Konkani</option>
+                <option value="mni">Manipuri</option>
+                <option value="ne">Nepali</option>
+                <option value="mai">Maithili</option>
+                <option value="af">Afrikaans</option>
+                <option value="sq">Albanian</option>
+                <option value="am">Amharic</option>
+                <option value="ar">Arabic</option>
+                <option value="hy">Armenian</option>
+                <option value="az">Azerbaijani</option>
+                <option value="eu">Basque</option>
+                <option value="be">Belarusian</option>
+                <option value="bn">Bengali</option>
+                <option value="bs">Bosnian</option>
+                <option value="bg">Bulgarian</option>
+                <option value="ca">Catalan</option>
+                <option value="ceb">Cebuano</option>
+                <option value="ny">Chichewa</option>
+                <option value="zh-CN">Chinese (Simplified)</option>
+                <option value="zh-TW">Chinese (Traditional)</option>
+                <option value="co">Corsican</option>
+                <option value="hr">Croatian</option>
+                <option value="cs">Czech</option>
+                <option value="da">Danish</option>
+                <option value="nl">Dutch</option>
+                <option value="en">English</option>
+                <option value="eo">Esperanto</option>
+                <option value="et">Estonian</option>
+                <option value="tl">Filipino</option>
+                <option value="fi">Finnish</option>
+                <option value="fr">French</option>
+                <option value="fy">Frisian</option>
+                <option value="gl">Galician</option>
+                <option value="ka">Georgian</option>
+                <option value="de">German</option>
+                <option value="el">Greek</option>
+                <option value="gu">Gujarati</option>
+                <option value="ht">Haitian Creole</option>
+                <option value="ha">Hausa</option>
+                <option value="haw">Hawaiian</option>
+                <option value="he">Hebrew</option>
+                <option value="hi">Hindi</option>
+                <option value="hmn">Hmong</option>
+                <option value="hu">Hungarian</option>
+                <option value="is">Icelandic</option>
+                <option value="ig">Igbo</option>
+                <option value="id">Indonesian</option>
+                <option value="ga">Irish</option>
+                <option value="it">Italian</option>
+                <option value="ja">Japanese</option>
+                <option value="jw">Javanese</option>
+                <option value="kn">Kannada</option>
+                <option value="kk">Kazakh</option>
+                <option value="km">Khmer</option>
+                <option value="rw">Kinyarwanda</option>
+                <option value="ko">Korean</option>
+                <option value="ku">Kurdish (Kurmanji)</option>
+                <option value="ky">Kyrgyz</option>
+                <option value="lo">Lao</option>
+                <option value="la">Latin</option>
+                <option value="lv">Latvian</option>
+                <option value="lt">Lithuanian</option>
+                <option value="lb">Luxembourgish</option>
+                <option value="mk">Macedonian</option>
+                <option value="mg">Malagasy</option>
+                <option value="ms">Malay</option>
+                <option value="ml">Malayalam</option>
+                <option value="mt">Maltese</option>
+                <option value="mi">Maori</option>
+                <option value="mr">Marathi</option>
+                <option value="mn">Mongolian</option>
+                <option value="my">Myanmar (Burmese)</option>
+                <option value="ne">Nepali</option>
+                <option value="no">Norwegian</option>
+                <option value="or">Odia</option>
+                <option value="ps">Pashto</option>
+                <option value="fa">Persian</option>
+                <option value="pl">Polish</option>
+                <option value="pt">Portuguese</option>
+                <option value="pa">Punjabi</option>
+                <option value="ro">Romanian</option>
+                <option value="ru">Russian</option>
+                <option value="sm">Samoan</option>
+                <option value="gd">Scots Gaelic</option>
+                <option value="sr">Serbian</option>
+                <option value="st">Sesotho</option>
+                <option value="sn">Shona</option>
+                <option value="sd">Sindhi</option>
+                <option value="si">Sinhala</option>
+                <option value="sk">Slovak</option>
+                <option value="sl">Slovenian</option>
+                <option value="so">Somali</option>
+                <option value="es">Spanish</option>
+                <option value="su">Sundanese</option>
+                <option value="sw">Swahili</option>
+                <option value="sv">Swedish</option>
+                <option value="tg">Tajik</option>
+                <option value="ta">Tamil</option>
+                <option value="tt">Tatar</option>
+                <option value="te">Telugu</option>
+                <option value="th">Thai</option>
+                <option value="tr">Turkish</option>
+                <option value="tk">Turkmen</option>
+                <option value="uk">Ukrainian</option>
+                <option value="ur">Urdu</option>
+                <option value="ug">Uyghur</option>
+                <option value="uz">Uzbek</option>
+                <option value="vi">Vietnamese</option>
+                <option value="cy">Welsh</option>
+                <option value="xh">Xhosa</option>
+                <option value="yi">Yiddish</option>
+                <option value="yo">Yoruba</option>
+                <option value="zu">Zulu</option>
+
+                <!-- Add more languages as needed -->
+            </select>
+        </div>
+        <!-- Text Input -->
+        <input type="text" id="userInput" placeholder="Type a message..." onkeydown="if(event.key === 'Enter') sendMessage()">
+        <!-- Voice Buttons -->
+        <div class="voice-buttons">
+            <button class="voice-button" id="start-record-btn" title="Start Recording">🎤</button>
+            <button class="voice-button" id="speak-btn" title="Speak Translation">🔊</button>
+        </div>
+        <!-- Send Button -->
+        <button class="send-button" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('userInput');
+    const startRecordBtn = document.getElementById('start-record-btn');
+    const speakBtn = document.getElementById('speak-btn');
+    const sourceLangSelect = document.getElementById('sourceLang');
+    const targetLangSelect = document.getElementById('targetLang');
+
+    // Speech Recognition Setup
+    let recognition;
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+    } else if ('SpeechRecognition' in window) {
+        recognition = new SpeechRecognition();
+    } else {
+        alert("Your browser does not support Speech Recognition. Please use Chrome or Edge.");
+    }
+
+    if (recognition) {
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US'; // Default language
+
+        recognition.onstart = function() {
+            console.log('Voice recognition started. Try speaking into the microphone.');
+            startRecordBtn.disabled = true;
+            startRecordBtn.textContent = '🎙️';
+        };
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            console.log('Voice recognition result:', transcript);
+            userInput.value = transcript;
+            sendMessage();
+        };
+
+        recognition.onerror = function(event) {
+            console.error('Voice recognition error:', event.error);
+            startRecordBtn.disabled = false;
+            startRecordBtn.textContent = '🎤';
+            alert("Voice recognition error: " + event.error);
+        };
+
+        recognition.onend = function() {
+            console.log('Voice recognition ended.');
+            startRecordBtn.disabled = false;
+            startRecordBtn.textContent = '🎤';
+        };
+    }
+
+    // Start Recording Function
+    function startRecording() {
+        if (recognition) {
+            // Set recognition language based on source language selection
+            const sourceLang = sourceLangSelect.value;
+            recognition.lang = sourceLang === 'auto' ? 'en-US' : sourceLang;
+            recognition.start();
+        }
+    }
+
+    // Speech Synthesis Function
+    function speak(text, lang) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang === 'auto' ? 'en-US' : lang;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("Your browser does not support Speech Synthesis. Please use Chrome or Edge.");
+        }
+    }
+
+    // Send Message Function
+    function sendMessage() {
+        const message = userInput.value.trim();
+        if (message === '') return;
+
+        displayMessage(message, 'user-message');
+
+        // Capture selected languages
+        const sourceLang = sourceLangSelect.value;
+        const targetLang = targetLangSelect.value;
+
+        // Prepare data for AJAX request
+        const data = {
+            text: message,
+            source_lang: sourceLang,    // Captured from dropdown
+            target_lang: targetLang     // Captured from dropdown
+        };
+
+        fetch('/translate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.translated_text) {
+                displayMessage(data.translated_text, 'bot-message');
+                speak(data.translated_text, targetLang); // Speak the translation in target language
+            } else if (data.error) {
+                displayMessage(data.error, 'bot-message');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            displayMessage("An error occurred. Please try again.", 'bot-message');
+        });
+
+        userInput.value = ''; // Clear input
+    }
+
+    // Display Message Function
+    function displayMessage(message, className) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chat-message', className);
+        messageDiv.textContent = message;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
+    }
+
+    // Event Listeners for Voice Buttons
+    startRecordBtn.addEventListener('click', startRecording);
+
+    speakBtn.addEventListener('click', () => {
+        const lastMessage = chatBox.lastElementChild;
+        if (lastMessage && lastMessage.classList.contains('bot-message')) {
+            const textToSpeak = lastMessage.textContent;
+            const selectedLang = targetLangSelect.value;
+            speak(textToSpeak, selectedLang);
+        }
+    });
+</script>
+
+</body>
+</html>
